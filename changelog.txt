@@ -3,6 +3,7 @@
 - Adding support for fixed text on the left and or right while retaining scrolled support for the rest of the display (WIP)
 - Adding support for line wrapping for lines that are too long to appear on a single line (WIP)
 - adding option to drop leading zeros from timestamps where both current time and total time have a leading zero (WIP)
+- adding support for progressbar with time and option to set progressbar blank character (WIP)
 2.6.0 (Helix)
 - Initial version for Kodi Helix
 - Fix retrieval of application mute state
