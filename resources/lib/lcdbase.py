@@ -561,14 +561,13 @@ class LcdBase():
 				self.SetProgressBar(0, -1)
 
 			if self.m_bAllowEmptyLines or len(line) > 0 or len(leftline) > 0 or len(rightline) > 0:
+#				self.m_lcdMode[mode][inLine]['left_text'] = leftline
+#				self.m_lcdMode[mode][inLine]['startx'] = len(leftline) + 1
+#				self.m_lcdMode[mode][inLine]['right_text'] = rightline
+#				self.m_lcdMode[mode][inLine]['endx'] = self.m_iColumns - len(rightline) - 1
 				
-				self.m_lcdMode[mode][inLine]['left_text'] = leftline
-				self.m_lcdMode[mode][inLine]['startx'] = len(leftline) + 1
-				self.m_lcdMode[mode][inLine]['right_text'] = rightline
-				self.m_lcdMode[mode][inLine]['endx'] = self.m_iColumns - len(rightline) - 1
 				
-				
-				self.SetLine(mode, outLine, line, self.m_lcdMode[mode][inLine], bForce)
+				self.SetLine(mode, outLine, line, leftline, rightline, self.m_lcdMode[mode][inLine], bForce)
 				outLine += 1
 
 			inLine += 1
