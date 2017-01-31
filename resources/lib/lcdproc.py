@@ -1,24 +1,24 @@
 '''
-		XBMC LCDproc addon
-		Copyright (C) 2012 Team XBMC
-		Copyright (C) 2012 Daniel 'herrnst' Scheller
-		
-		This program is free software; you can redistribute it and/or modify
-		it under the terms of the GNU General Public License as published by
-		the Free Software Foundation; either version 2 of the License, or
-		(at your option) any later version.
-		
-		This program is distributed in the hope that it will be useful,
-		but WITHOUT ANY WARRANTY; without even the implied warranty of
-		MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-		GNU General Public License for more details.
-		
-		You should have received a copy of the GNU General Public License along
-		with this program; if not, write to the Free Software Foundation, Inc.,
-		51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-		
-		You should have received a copy of the GNU General Public License
-		along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	XBMC LCDproc addon
+	Copyright (C) 2012 Team XBMC
+	Copyright (C) 2012 Daniel 'herrnst' Scheller
+	
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or
+	(at your option) any later version.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+	
+	You should have received a copy of the GNU General Public License along
+	with this program; if not, write to the Free Software Foundation, Inc.,
+	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+	
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
 import platform
@@ -66,6 +66,8 @@ class LCDProc(LcdBase):
 		self.m_strLineType = [None]*MAX_ROWS
 		self.m_strLineIcon = [None]*MAX_ROWS
 		self.m_strDigits = [None]*MAX_BIGDIGITS
+		self.m_strLeftText = [None]*MAX_ROWS
+		self.m_strRightText = [None]*MAX_ROWS
 		self.m_iProgressBarWidth = 0
 		self.m_iProgressBarLine = -1
 		self.m_strIconName = "BLOCK_FILLED"
@@ -193,6 +195,17 @@ class LCDProc(LcdBase):
 			strInitCommandList += "widget_set xbmc lineBigDigit" + str(i) + " 0 0\n"
 
 			self.m_strDigits[i] = ""
+			
+		for i in range(1, int(self.m_iRows)+1):
+			# left aligned text
+			strInitCommandList += "widget_add xbmc lineLeftText" + str(i) + " string\n"
+			
+			self.m_strLeftText[i] = ""
+			
+			# right aligned text
+			strInitCommandList += "widget_add xbmc lineRightText" + str(i) + " string\n"
+			
+			self.m_strRightText[i] = ""
 
 		if not self.SendCommand(strInitCommandList, True):
 			return False
@@ -541,8 +554,10 @@ class LCDProc(LcdBase):
 		self.m_strSetLineCmds += "widget_set xbmc lineIcon%i 0 0 BLOCK_FILLED\n" % (iLine)
 		self.m_strSetLineCmds += "widget_set xbmc lineProgress%i 0 0 0\n" % (iLine)
 		self.m_strSetLineCmds += "widget_set xbmc lineScroller%i 1 %i %i %i m 1 \"\"\n" % (iLine, iLine, self.m_iColumns, iLine)
+		self.m_strSetLineCmds += "widget_set xbmc lineLeftText%i 1 %i \"\"\n" % iLine
+		self.m_strSetLineCmds += "widget_set xbmc lineRightText%i 1 %i \"\"\n" % iLine
 
-	def SetLine(self, mode, iLine, strLine, dictDescriptor, bForce):
+	def SetLine(self, mode, iLine, strLine, strLeft, strRight, dictDescriptor, bForce):
 		if self.m_bStop or not self.tnsocket:
 			return
 
@@ -552,19 +567,18 @@ class LCDProc(LcdBase):
 		ln = iLine + 1
 		bExtraForce = False
 
-		if self.m_strLineType[iLine] != dictDescriptor['type']:
-			if dictDescriptor['type'] == LCD_LINETYPE.LCD_LINETYPE_BIGSCREEN:
+		if self.m_strLineType[iLine] != dictDescriptor['type']: # if switching line type
+			if dictDescriptor['type'] == LCD_LINETYPE.LCD_LINETYPE_BIGSCREEN: # if new type is big digits
 				self.ClearDisplay()
-			else:
-				if self.m_strLineType[iLine] == LCD_LINETYPE.LCD_LINETYPE_BIGSCREEN:
-					self.ClearBigDigits()
-				else:
-					self.ClearLine(int(iLine + 1))
+			elif self.m_strLineType[iLine] == LCD_LINETYPE.LCD_LINETYPE_BIGSCREEN: # if old type was big digits
+				self.ClearBigDigits()
+			else: # otherwise only clear this line
+				self.ClearLine(int(iLine + 1))
 
-			self.m_strLineType[iLine] = dictDescriptor['type']
-			bExtraForce = True
+			self.m_strLineType[iLine] = dictDescriptor['type'] # save new line type
+			bExtraForce = True # force update
 
-			if dictDescriptor['type'] == LCD_LINETYPE.LCD_LINETYPE_PROGRESS and dictDescriptor['text'] != "":
+			if dictDescriptor['type'] == LCD_LINETYPE.LCD_LINETYPE_PROGRESS and dictDescriptor['text'] != "": # if new line progressbar but have text?
 				self.m_strSetLineCmds += "widget_set xbmc lineScroller%i 1 %i %i %i m 1 \"%s\"\n" % (ln, ln, self.m_iColumns, ln, dictDescriptor['text'])
 
 		if dictDescriptor['type'] == LCD_LINETYPE.LCD_LINETYPE_BIGSCREEN:
@@ -573,6 +587,10 @@ class LCDProc(LcdBase):
 			strLineLong = strLine
 
 		strLineLong.strip()
+		
+		dictDescriptor['startx'] = len(strLeft) + 1
+		dictDescriptor['endx'] = self.m_iColumns - len(strRight) - 1
+#		if (dictDescriptor['type'] == LCD_LINETYPE.LCD_LINETYPE_ICONTEXT):
 	
 		iMaxLineLen = dictDescriptor['endx'] - (int(dictDescriptor['startx']) - 1)
 		iScrollSpeed = settings_getScrollDelay()
